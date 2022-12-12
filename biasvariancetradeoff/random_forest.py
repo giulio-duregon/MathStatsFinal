@@ -1,11 +1,11 @@
-import abc
-
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from functools import wraps
 from time import time
 from .losses import zero_one_loss, square_loss
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
+import numpy as np
 
 LOSS_FACTORY = {
     "zero_one_loss": zero_one_loss,
@@ -115,8 +115,8 @@ class ExperimentRunner:
         ax1 = fig.add_subplot(111)
         ax1.set_xticklabels(self.param_axis_labels)
         x_axis_arr = range(self.num_experiments)
-        plt.plot(x_axis_arr, self.zero_one_losses["test_losses"], color='b')
-        plt.plot(x_axis_arr, self.zero_one_losses["train_losses"], color='r')
+        plt.plot(x_axis_arr, self.zero_one_losses["test_losses"], color='g')
+        plt.plot(x_axis_arr, self.zero_one_losses["train_losses"], color='c')
         plt.ylabel('Average Zero/One Loss', size=30)
         plt.legend(['test_data', 'train_data'], loc='best')
         plt.xlabel("Model Increasing Complexity", size=30)
@@ -127,11 +127,39 @@ class ExperimentRunner:
         fig = plt.figure(figsize=(15, 8))
         ax1 = fig.add_subplot(111)
         ax1.set_xticklabels(self.param_axis_labels)
+
         x_axis_arr = range(self.num_experiments)
-        plt.plot(x_axis_arr, self.square_losses["test_losses"], color='b')
-        plt.plot(x_axis_arr, self.square_losses["train_losses"], color='r')
+        plt.plot(x_axis_arr, self.square_losses["test_losses"], color='g')
+        plt.plot(x_axis_arr, self.square_losses["train_losses"], color='c')
         plt.ylabel('Average Squared Loss', size=30)
         plt.legend(['test_data', 'train_data'], loc='best')
         plt.xlabel("Model Increasing Complexity", size=30)
         plt.title("Model Parameters", size=30)
         plt.show()
+
+
+
+        fig.tight_layout()
+
+    def results_to_csv(self, fpath: str = None):
+        # Collect the data
+        train_zero_one_loss = self.zero_one_losses["train_losses"]
+        test_zero_one_loss = self.zero_one_losses["test_losses"]
+        train_squared = self.square_losses["train_losses"]
+        test_squared = self.square_losses["test_losses"]
+        max_leafs = [x["max_leaf_nodes"] for x in self.model_params_iter]
+        num_estimators = [x["num_estimators"] for x in self.model_params_iter]
+
+        # Store in column orientation
+        columns = ["num_estimators","max_leaf_nodes", "train_squared_error","test_squared_error", "train_zero_one_loss", "test_zero_one_loss"]
+        data = np.array([num_estimators, max_leafs, train_squared, test_squared, train_zero_one_loss, test_zero_one_loss]).T
+
+        # Create dataframe
+        df = pd.DataFrame(data=data, columns=columns)
+
+        # Save
+        if fpath:
+            df.to_csv(fpath)
+        else:
+            df.to_csv("RF_Experiment_Results.csv")
+
