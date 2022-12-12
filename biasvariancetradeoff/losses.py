@@ -32,12 +32,12 @@ def zero_one_loss(test_y: np.array, y_hat: np.array) -> float:
     :param y_hat:
     :return: Loss: float
     """
-
-    # Validate input
+    # Initialize loss
     loss = 0
 
-    for index, val in enumerate(test_y):
-        if test_y[index] != y_hat[index]:
+    for row, label_vector in enumerate(y_hat):
+        correct_index = label_vector.argmax()
+        if y_hat[row][correct_index] != 1:
             loss += 1
 
     return loss / len(y_hat)

@@ -19,7 +19,7 @@ def timing(f):
         start = time()
         result = f(*args, **kw)
         end = time()
-        print(f"Time Delta: {end - start}")
+        print(f"Function: {f.__name__}, Time Delta: {end - start}")
         return result
 
     return wrap
@@ -40,7 +40,7 @@ class AbstractModel(ABC):
 
 
 class RandomForestWrapper(AbstractModel):
-    def __init__(self, max_leaf_nodes, num_estimators, bootstrap: bool, ):
+    def __init__(self, max_leaf_nodes, num_estimators, bootstrap: bool = False, ):
         self.model = RandomForestClassifier(max_leaf_nodes=max_leaf_nodes, n_estimators=num_estimators,
                                             bootstrap=bootstrap)
 
@@ -49,13 +49,14 @@ class RandomForestWrapper(AbstractModel):
         self.model.fit(x, y)
 
     @timing
-    def get_loss(self, loss_type: str, test_x, test_y):
+    def get_loss(self, loss_type: str, y_true, y_hat):
         loss = LOSS_FACTORY[loss_type]
-        y_hat = self.model.predict(test_x)
-        return loss(test_y, y_hat)
+        return loss(y_true, y_hat)
 
-    def predict(self, input):
-        return self.model.predict(input)
+    @timing
+    def predict(self, x_test):
+        x_test = x_test.reshape(-1, 784)
+        return self.model.predict(x_test)
 
 
 class ExperimentRunner:
@@ -83,11 +84,11 @@ class ExperimentRunner:
             model = self.model_constructor(**kwargs)
 
             # Fit model
-            model.train(self.train_x, self.train_x)
+            model.train(self.train_x, self.train_y)
 
             # Get Preds
-            train_y_hat = model.predict(self.train_y)
-            test_y_hat = model.predict(self.test_y)
+            train_y_hat = model.predict(self.train_x).reshape(-1,10)
+            test_y_hat = model.predict(self.test_x).reshape(-1,10)
 
             # Get Train losses
             self.square_losses["train_losses"].append(model.get_loss("mse", self.train_y, train_y_hat))
@@ -104,7 +105,7 @@ class ExperimentRunner:
         ax1.set_xticklabels(self.model_params_iter)
         x_axis_arr = range(self.num_experiments)
         plt.plot(x_axis_arr, self.zero_one_losses["test_losses"], color='b')
-        plt.plot(x_axis_arr, self.zero_one_losses["test_losses"], color='r')
+        plt.plot(x_axis_arr, self.zero_one_losses["train_losses"], color='r')
         plt.ylabel('Average Zero/One Loss', size=30)
         plt.legend(['test_data', 'train_data'], loc='best')
         plt.xlabel("Model Increasing Complexity", size=30)
@@ -117,7 +118,7 @@ class ExperimentRunner:
         ax1.set_xticklabels(self.model_params_iter)
         x_axis_arr = range(self.num_experiments)
         plt.plot(x_axis_arr, self.square_losses["test_losses"], color='b')
-        plt.plot(x_axis_arr, self.square_losses["test_losses"], color='r')
+        plt.plot(x_axis_arr, self.square_losses["train_losses"], color='r')
         plt.ylabel('Average Squared Loss', size=30)
         plt.legend(['test_data', 'train_data'], loc='best')
         plt.xlabel("Model Increasing Complexity", size=30)
