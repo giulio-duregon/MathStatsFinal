@@ -75,6 +75,17 @@ class ExperimentRunner:
         self.zero_one_losses = {"train_losses": [],
                                 "test_losses": []}
 
+        self.param_axis_labels = self.parsed_params_arr()
+
+    def parsed_params_arr(self):
+        axis_labels = list()
+        for params in self.model_params_iter:
+            temp = []
+            for key,value in params.items():
+                temp.append(value)
+            axis_labels.append(temp)
+        return axis_labels
+
     def run(self):
         kwargs: dict
         model: AbstractModel
@@ -102,7 +113,7 @@ class ExperimentRunner:
     def plot_zero_one_loss(self):
         fig = plt.figure(figsize=(15, 8))
         ax1 = fig.add_subplot(111)
-        ax1.set_xticklabels(self.model_params_iter)
+        ax1.set_xticklabels(self.param_axis_labels)
         x_axis_arr = range(self.num_experiments)
         plt.plot(x_axis_arr, self.zero_one_losses["test_losses"], color='b')
         plt.plot(x_axis_arr, self.zero_one_losses["train_losses"], color='r')
@@ -115,7 +126,7 @@ class ExperimentRunner:
     def plot_square_loss(self):
         fig = plt.figure(figsize=(15, 8))
         ax1 = fig.add_subplot(111)
-        ax1.set_xticklabels(self.model_params_iter)
+        ax1.set_xticklabels(self.param_axis_labels)
         x_axis_arr = range(self.num_experiments)
         plt.plot(x_axis_arr, self.square_losses["test_losses"], color='b')
         plt.plot(x_axis_arr, self.square_losses["train_losses"], color='r')
